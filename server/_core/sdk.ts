@@ -4,7 +4,8 @@ import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
-import type { User } from "../../drizzle/schema";
+import type { IUser } from "../models";
+import mongoose from "mongoose";
 import * as db from "../db";
 import { ENV } from "./env";
 import type {
@@ -316,14 +317,41 @@ class SDKServer {
       lastSignedIn: signedInAt,
     });
 
-    return user;
+    // Normalize Mongoose document to PlainUser shape
+    const plainUser: PlainUser = {
+      _id: user._id,
+      id: user._id.toString(),
+      openId: user.openId,
+      name: user.name,
+      email: user.email,
+      loginMethod: user.loginMethod,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      lastSignedIn: user.lastSignedIn,
+    };
+    return plainUser;
   }
 }
 
 const CRON_OPEN_ID_PREFIX = "cron_";
 
+/** Plain user shape (not a Mongoose document) for internal use. */
+export type PlainUser = {
+  _id: import("mongoose").Types.ObjectId;
+  id: string;
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  role: "user" | "admin";
+  createdAt: Date;
+  updatedAt: Date;
+  lastSignedIn: Date;
+};
+
 /** Result of `sdk.authenticateRequest`. Cron callbacks set `isCron=true` and `taskUid`; see `/home/ubuntu/skills/webdev-periodic-updates/SKILL.md`. */
-export type AuthenticatedUser = User & {
+export type AuthenticatedUser = PlainUser & {
   taskUid?: string;
   isCron?: boolean;
 };
@@ -333,7 +361,8 @@ function buildCronUser(
 ): AuthenticatedUser {
   const now = new Date();
   return {
-    id: -1,
+    _id: new mongoose.Types.ObjectId(),
+    id: "-1",
     openId: userInfo.openId,
     name: userInfo.name || "Manus Scheduled Task",
     email: null,
@@ -344,7 +373,7 @@ function buildCronUser(
     lastSignedIn: now,
     taskUid: userInfo.taskUid ?? undefined,
     isCron: true,
-  } as AuthenticatedUser;
+  };
 }
 
 export const sdk = new SDKServer();

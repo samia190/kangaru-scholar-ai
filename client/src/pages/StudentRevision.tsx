@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -43,17 +43,22 @@ export default function StudentRevision() {
   );
 
   // Load chat history when authenticated
-  useState(() => {
-    if (isAuthenticated && loadHistoryQuery.data?.messages) {
-      const historyMessages = loadHistoryQuery.data.messages.filter(
-        (m: { role: string; content: string }) =>
-          m.role === "user" || m.role === "assistant"
-      );
+  useEffect(() => {
+    if (isAuthenticated && loadHistoryQuery.data?.messages && loadHistoryQuery.data.messages.length > 0) {
+      const historyMessages: Message[] = loadHistoryQuery.data.messages
+        .filter(
+          (m: { role: string; content: string }) =>
+            m.role === "user" || m.role === "assistant"
+        )
+        .map((m: { role: string; content: string }) => ({
+          role: m.role as Message["role"],
+          content: m.content,
+        }));
       if (historyMessages.length > 0) {
         setMessages(historyMessages);
       }
     }
-  });
+  }, [isAuthenticated, loadHistoryQuery.data]);
 
   // Loading state
   if (loading) {

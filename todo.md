@@ -101,3 +101,17 @@ This document outlines the features and tasks for the Kangaru Scholar AI web pla
 - [x] Free, self-hosted LLMs (no API keys, no external dependencies)
 - [x] Markdown rendering across all chat interfaces
 - [x] Persistent chat history with database-backed save/load
+
+## Phase 9: Migrate database from Drizzle/MySQL to Mongoose/MongoDB Atlas
+- [x] Install mongoose package
+- [x] Create Mongoose schemas and models (User, ChatHistory, RevisionMaterial, LessonPlan, Timetable)
+- [x] Rewrite server/db.ts with Mongoose-based database helpers
+- [x] Create server/_core/mongodb.ts connection manager
+- [x] Update server/_core/env.ts with MONGO_URL variable
+- [x] Update server/_core/index.ts to initialize MongoDB on startup
+- [x] Update server/_core/context.ts to normalize MongoDB documents for tRPC context
+- [x] Update server/_core/sdk.ts to use IUser type and return PlainUser shape
+- [x] Update tests for string ObjectId compatibility
+- [x] TypeScript check: 0 errors
+- [x] Tests: 19/19 passing
+- [x] Create deployment guide for Render + MongoDB Atlas + Ollama

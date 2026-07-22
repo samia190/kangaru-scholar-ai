@@ -19,7 +19,7 @@ export type FileContent = {
   type: "file_url";
   file_url: {
     url: string;
-    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4" ;
+    mime_type?: "audio/mpeg" | "audio/wav" | "application/pdf" | "audio/mp4" | "video/mp4";
   };
 };
 
@@ -45,15 +45,10 @@ export type ToolChoicePrimitive = "none" | "auto" | "required";
 export type ToolChoiceByName = { name: string };
 export type ToolChoiceExplicit = {
   type: "function";
-  function: {
-    name: string;
-  };
+  function: { name: string };
 };
 
-export type ToolChoice =
-  | ToolChoicePrimitive
-  | ToolChoiceByName
-  | ToolChoiceExplicit;
+export type ToolChoice = ToolChoicePrimitive | ToolChoiceByName | ToolChoiceExplicit;
 
 export type InvokeParams = {
   messages: Message[];
@@ -113,6 +108,39 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
+// ─── Ollama Provider Detection ───
+
+/**
+ * Resolve the LLM API endpoint.
+ * Priority:
+ * 1. Ollama local server (OLLAMA_BASE_URL) — free, self-hosted
+ * 2. Default to localhost:11434 (standard Ollama port)
+ *
+ * Forge API is NOT used in self-hosted mode.
+ */
+const resolveApiUrl = () => {
+  if (ENV.ollamaBaseUrl && ENV.ollamaBaseUrl.trim().length > 0) {
+    return `${ENV.ollamaBaseUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  }
+  return "http://localhost:11434/v1/chat/completions";
+};
+
+const assertApiKey = () => {
+  // Ollama does not require an API key by default
+  if (ENV.ollamaApiKey && ENV.ollamaApiKey.trim().length > 0) {
+    // Key is set, but Ollama is still the provider — no assertion needed
+  }
+};
+
+const getAuthHeaders = (): Record<string, string> => {
+  if (ENV.ollamaApiKey && ENV.ollamaApiKey.trim().length > 0) {
+    return { authorization: `Bearer ${ENV.ollamaApiKey}` };
+  }
+  return {}; // Ollama default: no auth required
+};
+
+// ─── Message Normalization ───
+
 const ensureArray = (
   value: MessageContent | MessageContent[]
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
@@ -123,19 +151,9 @@ const normalizeContentPart = (
   if (typeof part === "string") {
     return { type: "text", text: part };
   }
-
-  if (part.type === "text") {
-    return part;
-  }
-
-  if (part.type === "image_url") {
-    return part;
-  }
-
-  if (part.type === "file_url") {
-    return part;
-  }
-
+  if (part.type === "text") return part;
+  if (part.type === "image_url") return part;
+  if (part.type === "file_url") return part;
   throw new Error("Unsupported message content part");
 };
 
@@ -144,33 +162,18 @@ const normalizeMessage = (message: Message) => {
 
   if (role === "tool" || role === "function") {
     const content = ensureArray(message.content)
-      .map(part => (typeof part === "string" ? part : JSON.stringify(part)))
+      .map((part) => (typeof part === "string" ? part : JSON.stringify(part)))
       .join("\n");
-
-    return {
-      role,
-      name,
-      tool_call_id,
-      content,
-    };
+    return { role, name, tool_call_id, content };
   }
 
   const contentParts = ensureArray(message.content).map(normalizeContentPart);
 
-  // If there's only text content, collapse to a single string for compatibility
   if (contentParts.length === 1 && contentParts[0].type === "text") {
-    return {
-      role,
-      name,
-      content: contentParts[0].text,
-    };
+    return { role, name, content: contentParts[0].text };
   }
 
-  return {
-    role,
-    name,
-    content: contentParts,
-  };
+  return { role, name, content: contentParts };
 };
 
 const normalizeToolChoice = (
@@ -178,49 +181,20 @@ const normalizeToolChoice = (
   tools: Tool[] | undefined
 ): "none" | "auto" | ToolChoiceExplicit | undefined => {
   if (!toolChoice) return undefined;
-
-  if (toolChoice === "none" || toolChoice === "auto") {
-    return toolChoice;
-  }
-
+  if (toolChoice === "none" || toolChoice === "auto") return toolChoice;
   if (toolChoice === "required") {
     if (!tools || tools.length === 0) {
-      throw new Error(
-        "tool_choice 'required' was provided but no tools were configured"
-      );
+      throw new Error("tool_choice 'required' but no tools configured");
     }
-
     if (tools.length > 1) {
-      throw new Error(
-        "tool_choice 'required' needs a single tool or specify the tool name explicitly"
-      );
+      throw new Error("tool_choice 'required' needs a single tool or explicit name");
     }
-
-    return {
-      type: "function",
-      function: { name: tools[0].function.name },
-    };
+    return { type: "function", function: { name: tools[0].function.name } };
   }
-
   if ("name" in toolChoice) {
-    return {
-      type: "function",
-      function: { name: toolChoice.name },
-    };
+    return { type: "function", function: { name: toolChoice.name } };
   }
-
   return toolChoice;
-};
-
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
-
-const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
-  }
 };
 
 const normalizeResponseFormat = ({
@@ -244,9 +218,7 @@ const normalizeResponseFormat = ({
       explicitFormat.type === "json_schema" &&
       !explicitFormat.json_schema?.schema
     ) {
-      throw new Error(
-        "responseFormat json_schema requires a defined schema object"
-      );
+      throw new Error("responseFormat json_schema requires a defined schema object");
     }
     return explicitFormat;
   }
@@ -268,6 +240,8 @@ const normalizeResponseFormat = ({
   };
 };
 
+// ─── Retry Logic ───
+
 const RETRY_MAX_RETRIES = 4;
 const RETRY_BASE_DELAY_MS = 500;
 const RETRY_MAX_DELAY_MS = 30_000;
@@ -275,7 +249,7 @@ const RETRY_MAX_DELAY_MS = 30_000;
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
 const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const parseRetryAfter = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -285,9 +259,6 @@ const parseRetryAfter = (value: string | null): number | undefined => {
   return Number.isNaN(at) ? undefined : Math.max(0, at - Date.now());
 };
 
-// Equal-jitter exponential backoff. The cap/2 floor guarantees a minimum
-// delay so a misbehaving caller loop slows down instead of hammering the
-// upstream while it keeps returning errors.
 const computeBackoffDelay = (
   attempt: number,
   retryAfterMs?: number
@@ -297,8 +268,6 @@ const computeBackoffDelay = (
   return Math.min(Math.max(jittered, retryAfterMs ?? 0), RETRY_MAX_DELAY_MS);
 };
 
-// Retries non-2xx responses and network errors with exponential backoff, then
-// returns the final Response so callers keep their existing error handling.
 const fetchWithBackoff = async (
   url: string,
   init: FetchInit
@@ -312,23 +281,21 @@ const fetchWithBackoff = async (
         return response;
       }
 
-      const retryAfterMs = parseRetryAfter(
-        response.headers.get("retry-after")
-      );
+      const retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
       try {
         await response.body?.cancel();
       } catch {
-        // Body already settled; nothing to clean up.
+        // Body already settled
       }
       console.warn(
-        `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after status ${response.status}`
+        `[Ollama] Request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after status ${response.status}`
       );
       await sleep(computeBackoffDelay(attempt, retryAfterMs));
     } catch (error) {
       lastError = error;
       if (attempt === RETRY_MAX_RETRIES) throw error;
       console.warn(
-        `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`
+        `[Ollama] Request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`
       );
       await sleep(computeBackoffDelay(attempt));
     }
@@ -338,6 +305,8 @@ const fetchWithBackoff = async (
     ? lastError
     : new Error("LLM request failed after exhausting retries");
 };
+
+// ─── Main LLM Invoke ───
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   assertApiKey();
@@ -401,11 +370,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
+  console.log(`[Ollama] Calling model: ${model || "default"}, endpoint: ${resolveApiUrl()}`);
+
   const response = await fetchWithBackoff(resolveApiUrl(), {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });
@@ -417,8 +388,14 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     );
   }
 
-  return (await response.json()) as InvokeResult;
+  const result = (await response.json()) as InvokeResult;
+  console.log(
+    `[Ollama] Response received: model=${result.model}, tokens=${result.usage?.total_tokens ?? "?"}`
+  );
+  return result;
 }
+
+// ─── Model Listing ───
 
 export type ModelInfo = {
   id: string;
@@ -435,12 +412,12 @@ export type ModelsResponse = {
 export async function listLLMModels(): Promise<ModelsResponse> {
   assertApiKey();
 
-  const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/models`
-    : "https://forge.manus.im/v1/models";
+  const url = ENV.ollamaBaseUrl && ENV.ollamaBaseUrl.trim().length > 0
+    ? `${ENV.ollamaBaseUrl.replace(/\/$/, "")}/v1/models`
+    : "http://localhost:11434/v1/models";
 
   const response = await fetchWithBackoff(url, {
-    headers: { authorization: `Bearer ${ENV.forgeApiKey}` },
+    headers: { ...getAuthHeaders() },
   });
 
   if (!response.ok) {

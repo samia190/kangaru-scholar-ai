@@ -5,15 +5,32 @@ import type { TrpcContext } from "./_core/context";
 // Mock the invokeLLM function
 vi.mock("./_core/llm", () => ({
   invokeLLM: vi.fn(async () => ({
+    id: "chatcmpl-test",
+    created: Date.now() / 1000,
+    model: "llama3.2:1b",
     choices: [
       {
+        index: 0,
         message: {
-          content:
-            "This is a test response about Kangaru Girls High School.",
+          role: "assistant" as const,
+          content: "This is a test response about Kangaru Girls High School.",
+          tool_calls: undefined,
         },
+        finish_reason: "stop",
       },
     ],
+    usage: {
+      prompt_tokens: 50,
+      completion_tokens: 30,
+      total_tokens: 80,
+    },
   })),
+}));
+
+// Mock the database functions
+vi.mock("./db", () => ({
+  saveChatHistory: vi.fn(async () => {}),
+  loadChatHistory: vi.fn(async () => null),
 }));
 
 // Helper function to create a mock context for public procedures
@@ -34,7 +51,7 @@ function createPublicContext(): TrpcContext {
 function createProtectedContext(): TrpcContext {
   return {
     user: {
-      id: 1,
+      id: "6760a1b2c3d4e5f6a7b8c9d0",
       openId: "test-user-123",
       email: "test@example.com",
       name: "Test Student",
@@ -141,7 +158,7 @@ describe("Chat Procedures", () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toBeDefined();
-      expect(result.userId).toBe(1);
+      expect(result.userId).toBe("6760a1b2c3d4e5f6a7b8c9d0");
     });
 
     it("should support CBC curriculum", async () => {
@@ -204,7 +221,7 @@ describe("Chat Procedures", () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toBeDefined();
-      expect(result.userId).toBe(1);
+      expect(result.userId).toBe("6760a1b2c3d4e5f6a7b8c9d0");
     });
 
     it("should include subject and grade level in the context", async () => {
@@ -253,7 +270,7 @@ describe("Chat Procedures", () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toBeDefined();
-      expect(result.userId).toBe(1);
+      expect(result.userId).toBe("6760a1b2c3d4e5f6a7b8c9d0");
     });
 
     it("should handle availability constraints", async () => {
@@ -291,6 +308,34 @@ describe("Chat Procedures", () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toBeDefined();
+    });
+  });
+
+  describe("loadChatHistory", () => {
+    it("should require authentication", async () => {
+      const ctx = createPublicContext();
+      const caller = appRouter.createCaller(ctx);
+
+      try {
+        await caller.chat.loadChatHistory({
+          portalType: "student",
+        });
+        expect.fail("Should have thrown an error");
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    it("should return messages for authenticated user", async () => {
+      const ctx = createProtectedContext();
+      const caller = appRouter.createCaller(ctx);
+
+      const result = await caller.chat.loadChatHistory({
+        portalType: "student",
+      });
+
+      expect(result.success).toBe(true);
+      expect(Array.isArray(result.messages)).toBe(true);
     });
   });
 
