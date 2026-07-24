@@ -3,7 +3,7 @@ import type { InvokeParams, InvokeResult } from "../llm";
 import { AIProvider, sleep, parseRetryAfter, computeBackoffDelay, RETRY_MAX_RETRIES } from "./provider";
 
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
-const DEFAULT_MODEL = "qwen/qwen3-30b-a3b:free";
+const DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 export class OpenRouterProvider implements AIProvider {
   readonly name = "openrouter";
