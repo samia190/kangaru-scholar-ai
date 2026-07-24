@@ -4,8 +4,7 @@ import { AIProvider, sleep, parseRetryAfter, computeBackoffDelay, RETRY_MAX_RETR
 
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 // Updated DEFAULT_MODEL to a known free and stable model
-const DEFAULT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"; 
-
+const DEFAULT_MODEL = "qwen/qwen3-235b-a22b:free";
 export class OpenRouterProvider implements AIProvider {
   readonly name = "openrouter";
 

@@ -70,11 +70,9 @@ export const ENV = {
   openrouterApiKey:
     process.env.OPENROUTER_API_KEY ?? "",
 
-  openrouterModel:
+ openrouterModel:
     process.env.OPENROUTER_MODEL ??
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
-
-
+    "qwen/qwen3-235b-a22b:free,nvidia/nemotron-3-ultra-550b-a55b:free",  
   // ─── AI Settings ───
 
   aiRequestTimeout:
