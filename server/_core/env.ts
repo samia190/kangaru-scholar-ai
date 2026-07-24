@@ -72,7 +72,7 @@ export const ENV = {
 
   openrouterModel:
     process.env.OPENROUTER_MODEL ??
-    "meta-llama/llama-3.1-8b-instruct",
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
 
 
   // ─── AI Settings ───
