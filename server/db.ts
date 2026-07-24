@@ -167,7 +167,7 @@ export async function loadChatHistory(
 // ─── Revision Materials ───
 
 export async function saveRevisionMaterial(data: {
-  curriculum: "8-4-4" | "CBC";
+  curriculum: "8-4-4" | "CBE";
   subject: string;
   topic: string;
   content: string;

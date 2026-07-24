@@ -30,11 +30,11 @@ export default function StudentRevision() {
     {
       role: "assistant",
       content:
-        "Hello! I'm your AI revision assistant. I'm here to help you with your studies. Please select your curriculum (**8-4-4** or **CBC**) and optionally specify a subject, then ask me any questions you have!",
+        "Hello! I'm your AI revision assistant. I'm here to help you with your studies. Please select your curriculum (**8-4-4** or **CBE**) and optionally specify a subject, then ask me any questions you have!",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [curriculum, setCurriculum] = useState<"8-4-4" | "CBC">("8-4-4");
+  const [curriculum, setCurriculum] = useState<"8-4-4" | "CBE">("8-4-4");
   const [subject, setSubject] = useState("");
   const studentRevisionMutation = trpc.chat.studentRevision.useMutation();
   const loadHistoryQuery = trpc.chat.loadChatHistory.useQuery(
@@ -188,7 +188,7 @@ export default function StudentRevision() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="8-4-4">8-4-4 System</SelectItem>
-                <SelectItem value="CBC">CBC (Competency-Based)</SelectItem>
+                <SelectItem value="CBE">CBE (Competency-Based)</SelectItem>
               </SelectContent>
             </Select>
           </div>

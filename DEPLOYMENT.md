@@ -389,7 +389,7 @@ curl -X POST http://localhost:11434/api/generate \
 |-------|-------------|---------|-------|----------|
 | llama3.2:1b | 2 GB | Basic | Very Fast | Guest chatbot, simple Q&A |
 | qwen2.5:1.5b | 2.5 GB | Good | Fast | Student revision |
-| llama3.1:8b | 8 GB | Excellent | Moderate | All portals (recommended) |
+| llama3.2:1b:8b | 8 GB | Excellent | Moderate | All portals (recommended) |
 | qwen2.5:14b | 16 GB | Excellent | Slower | Teacher tools, complex reasoning |
 | mistral:7b | 6 GB | Very Good | Fast | General purpose alternative |
 

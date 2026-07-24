@@ -60,7 +60,7 @@ export default function StudentPortal() {
             <h3 className="text-xl font-bold mb-3">Revision Assistant</h3>
             <p className="text-muted-foreground mb-6">
               Get AI-powered help with your studies. Ask questions about any
-              subject from the 8-4-4 or CBC curriculum, get explanations, and
+              subject from the 8-4-4 or CBE curriculum, get explanations, and
               practice questions.
             </p>
             <Button
@@ -99,7 +99,7 @@ export default function StudentPortal() {
             </p>
           </Card>
           <Card className="p-6 bg-card border-border">
-            <h4 className="font-bold mb-3">CBC (Competency-Based Curriculum)</h4>
+            <h4 className="font-bold mb-3">CBE (Competency-Based Curriculum)</h4>
             <p className="text-muted-foreground text-sm">
               Modern system focusing on competencies and skills development
               across different learning areas.

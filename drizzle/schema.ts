@@ -38,7 +38,7 @@ export type InsertChatHistory = typeof chatHistories.$inferInsert;
  */
 export const revisionMaterials = mysqlTable("revisionMaterials", {
   id: int("id").autoincrement().primaryKey(),
-  curriculum: mysqlEnum("curriculum", ["8-4-4", "CBC"]).notNull(),
+  curriculum: mysqlEnum("curriculum", ["8-4-4", "CBE"]).notNull(),
   subject: varchar("subject", { length: 255 }).notNull(),
   topic: varchar("topic", { length: 255 }).notNull(),
   content: text("content").notNull(),

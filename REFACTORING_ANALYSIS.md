@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Kangaru Scholar AI is a comprehensive web platform built with React 19, Tailwind CSS 4, Express 4, tRPC 11, and Drizzle ORM. It provides AI-powered tools for guests, students, and teachers at Kangaru Girls High School.
+Kangaru Scholar AI is a comprehensive web platform built with React 19, Tailwind CSS 4, Express 4, tRPC 11, and Drizzle ORM. It provides AI-powered tools for guests, students, and teachers at Kangaru Girls Senior School.
 
 ## Current State Assessment
 
@@ -79,7 +79,7 @@ The refactor will replace the Manus Forge API with **Ollama** as the self-hosted
 
 1. **`server/_core/llm.ts`** — Replace the Forge API URL and model names with Ollama-compatible endpoints
 2. **`server/routers.ts`** — Update model references:
-   - `gpt-5-mini` → `llama3.1:8b` (fast, cost-free for general queries)
+   - `gpt-5-mini` → `llama3.2:1b:8b` (fast, cost-free for general queries)
    - `claude-sonnet-4-6` → `qwen2.5:14b` (strong reasoning for structured tasks)
 3. **`server/_core/env.ts`** — Add Ollama base URL environment variable
 4. **Add `ollama` npm package** — Use the official Ollama Node.js client for cleaner integration
@@ -88,7 +88,7 @@ The refactor will replace the Manus Forge API with **Ollama** as the self-hosted
 
 | Feature | Old Model | New Model | Reason |
 |---------|-----------|-----------|--------|
-| Guest Chatbot | `gpt-5-mini` | `llama3.1:8b` | Fast, efficient for Q&A |
+| Guest Chatbot | `gpt-5-mini` | `llama3.2:1b:8b` | Fast, efficient for Q&A |
 | Student Revision | `claude-sonnet-4-6` | `qwen2.5:14b` | Strong reasoning, free |
 | Teacher Lesson Plan | `claude-sonnet-4-6` | `qwen2.5:14b` | Structured output capability |
 | Teacher Timetable | `claude-sonnet-4-6` | `qwen2.5:14b` | Complex scheduling logic |
@@ -97,7 +97,7 @@ The refactor will replace the Manus Forge API with **Ollama** as the self-hosted
 
 The implementation will support configurable models via environment variables, so users can swap in any Ollama-supported model:
 
-- `LLAMA3.1:8B` — General purpose, fast
+- `llama3.2:1b:8B` — General purpose, fast
 - `QWEN2.5:14B` — Strong reasoning and coding
 - `MISTRAL:7B` — Good all-rounder
 - `NEURAL-CHAT:7B` — Conversational focus

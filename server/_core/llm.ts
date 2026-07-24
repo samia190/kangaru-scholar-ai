@@ -1,4 +1,8 @@
 import { ENV } from "./env";
+import { providerManager } from "./providers/manager";
+import type { ProviderStatus } from "./providers/manager";
+
+// ─── Exported Types (Preserved as per requirements) ───
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -108,38 +112,25 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
-// ─── Ollama Provider Detection ───
-
-/**
- * Resolve the LLM API endpoint.
- * Priority:
- * 1. Ollama local server (OLLAMA_BASE_URL) — free, self-hosted
- * 2. Default to localhost:11434 (standard Ollama port)
- *
- * Forge API is NOT used in self-hosted mode.
- */
-const resolveApiUrl = () => {
-  if (ENV.ollamaBaseUrl && ENV.ollamaBaseUrl.trim().length > 0) {
-    return `${ENV.ollamaBaseUrl.replace(/\/$/, "")}/v1/chat/completions`;
-  }
-  return "http://localhost:11434/v1/chat/completions";
+export type ModelInfo = {
+  id: string;
+  object: string;
+  created: number;
+  owned_by: string;
 };
 
-const assertApiKey = () => {
-  // Ollama does not require an API key by default
-  if (ENV.ollamaApiKey && ENV.ollamaApiKey.trim().length > 0) {
-    // Key is set, but Ollama is still the provider — no assertion needed
-  }
+export type ModelsResponse = {
+  object: string;
+  data: ModelInfo[];
 };
 
-const getAuthHeaders = (): Record<string, string> => {
-  if (ENV.ollamaApiKey && ENV.ollamaApiKey.trim().length > 0) {
-    return { authorization: `Bearer ${ENV.ollamaApiKey}` };
-  }
-  return {}; // Ollama default: no auth required
+// ─── Logging Utility ───
+
+const log = (prefix: string, message: string, ...args: unknown[]) => {
+  console.log(`${prefix} ${message}`, ...args);
 };
 
-// ─── Message Normalization ───
+// ─── Message Normalization (Preserved and improved readability/typing) ───
 
 const ensureArray = (
   value: MessageContent | MessageContent[]
@@ -151,6 +142,7 @@ const normalizeContentPart = (
   if (typeof part === "string") {
     return { type: "text", text: part };
   }
+  // Type guards ensure 'part' has a 'type' property
   if (part.type === "text") return part;
   if (part.type === "image_url") return part;
   if (part.type === "file_url") return part;
@@ -158,17 +150,19 @@ const normalizeContentPart = (
 };
 
 const normalizeMessage = (message: Message) => {
-  const { role, name, tool_call_id } = message;
+  const { role, name, tool_call_id, content } = message;
 
   if (role === "tool" || role === "function") {
-    const content = ensureArray(message.content)
+    // For tool/function roles, content is typically a string or a simple object
+    const normalizedContent = ensureArray(content)
       .map((part) => (typeof part === "string" ? part : JSON.stringify(part)))
       .join("\n");
-    return { role, name, tool_call_id, content };
+    return { role, name, tool_call_id, content: normalizedContent };
   }
 
-  const contentParts = ensureArray(message.content).map(normalizeContentPart);
+  const contentParts = ensureArray(content).map(normalizeContentPart);
 
+  // If there's only one text part, simplify the content to a string
   if (contentParts.length === 1 && contentParts[0].type === "text") {
     return { role, name, content: contentParts[0].text };
   }
@@ -182,6 +176,7 @@ const normalizeToolChoice = (
 ): "none" | "auto" | ToolChoiceExplicit | undefined => {
   if (!toolChoice) return undefined;
   if (toolChoice === "none" || toolChoice === "auto") return toolChoice;
+
   if (toolChoice === "required") {
     if (!tools || tools.length === 0) {
       throw new Error("tool_choice 'required' but no tools configured");
@@ -191,10 +186,22 @@ const normalizeToolChoice = (
     }
     return { type: "function", function: { name: tools[0].function.name } };
   }
-  if ("name" in toolChoice) {
-    return { type: "function", function: { name: toolChoice.name } };
+
+  // Handle ToolChoiceByName { name: string }
+  if ("name" in toolChoice && typeof (toolChoice as any).name === "string") {
+    return { type: "function", function: { name: (toolChoice as any).name } };
   }
-  return toolChoice;
+
+  // Explicit validation for ToolChoiceExplicit
+  if (
+    typeof toolChoice === "object" &&
+    "type" in toolChoice &&
+    (toolChoice as any).type === "function"
+  ) {
+    return toolChoice as ToolChoiceExplicit;
+  }
+
+  throw new Error("Invalid tool choice format");
 };
 
 const normalizeResponseFormat = ({
@@ -240,76 +247,14 @@ const normalizeResponseFormat = ({
   };
 };
 
-// ─── Retry Logic ───
-
-const RETRY_MAX_RETRIES = 4;
-const RETRY_BASE_DELAY_MS = 500;
-const RETRY_MAX_DELAY_MS = 30_000;
-
-type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
-
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-const parseRetryAfter = (value: string | null): number | undefined => {
-  if (!value) return undefined;
-  const seconds = Number(value);
-  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
-  const at = Date.parse(value);
-  return Number.isNaN(at) ? undefined : Math.max(0, at - Date.now());
-};
-
-const computeBackoffDelay = (
-  attempt: number,
-  retryAfterMs?: number
-): number => {
-  const cap = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
-  const jittered = cap / 2 + Math.random() * (cap / 2);
-  return Math.min(Math.max(jittered, retryAfterMs ?? 0), RETRY_MAX_DELAY_MS);
-};
-
-const fetchWithBackoff = async (
-  url: string,
-  init: FetchInit
-): Promise<Response> => {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
-    try {
-      const response = await fetch(url, init);
-      if (response.ok || attempt === RETRY_MAX_RETRIES) {
-        return response;
-      }
-
-      const retryAfterMs = parseRetryAfter(response.headers.get("retry-after"));
-      try {
-        await response.body?.cancel();
-      } catch {
-        // Body already settled
-      }
-      console.warn(
-        `[Ollama] Request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after status ${response.status}`
-      );
-      await sleep(computeBackoffDelay(attempt, retryAfterMs));
-    } catch (error) {
-      lastError = error;
-      if (attempt === RETRY_MAX_RETRIES) throw error;
-      console.warn(
-        `[Ollama] Request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`
-      );
-      await sleep(computeBackoffDelay(attempt));
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("LLM request failed after exhausting retries");
-};
-
-// ─── Main LLM Invoke ───
+// ─── Main LLM Invoke (Provider-agnostic) ───
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
+  log("[AI][LLM]", "Invoking LLM", {
+    model: params.model,
+    messageCount: params.messages.length,
+    tools: params.tools?.length ?? 0,
+  });
 
   const {
     messages,
@@ -327,105 +272,90 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     max_tokens,
   } = params;
 
-  const payload: Record<string, unknown> = {
-    messages: messages.map(normalizeMessage),
-  };
-
-  if (model) {
-    payload.model = model;
-  }
-
-  if (tools && tools.length > 0) {
-    payload.tools = tools;
-  }
-
-  const normalizedToolChoice = normalizeToolChoice(
-    toolChoice || tool_choice,
-    tools
-  );
-  if (normalizedToolChoice) {
-    payload.tool_choice = normalizedToolChoice;
-  }
-
-  const resolvedMaxTokens = max_tokens ?? maxTokens;
-  if (typeof resolvedMaxTokens === "number") {
-    payload.max_tokens = resolvedMaxTokens;
-  }
-
-  if (thinking) {
-    payload.thinking = thinking;
-  }
-  if (reasoning) {
-    payload.reasoning = reasoning;
-  }
-
-  const normalizedResponseFormat = normalizeResponseFormat({
+  const normalizedMessages = messages.map(normalizeMessage);
+  const normalizedToolChoiceValue = normalizeToolChoice(toolChoice || tool_choice, tools);
+  const normalizedResponseFormatValue = normalizeResponseFormat({
     responseFormat,
     response_format,
     outputSchema,
     output_schema,
   });
 
-  if (normalizedResponseFormat) {
-    payload.response_format = normalizedResponseFormat;
-  }
+  const invokePayload = {
+    messages: normalizedMessages,
+    tools,
+    toolChoice: normalizedToolChoiceValue,
+    responseFormat: normalizedResponseFormatValue,
+    model,
+    thinking,
+    reasoning,
+    maxTokens: max_tokens ?? maxTokens, // Prefer max_tokens if both are provided
+  };
 
-  console.log(`[Ollama] Calling model: ${model || "default"}, endpoint: ${resolveApiUrl()}`);
-
-  const response = await fetchWithBackoff(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
-  }
-
-  const result = (await response.json()) as InvokeResult;
-  console.log(
-    `[Ollama] Response received: model=${result.model}, tokens=${result.usage?.total_tokens ?? "?"}`
-  );
+  log("[AI][LLM]", "Calling ProviderManager.invoke");
+  const result = await providerManager.invoke(invokePayload);
+  log("[AI][LLM]", `Response received: model=${result.model}, tokens=${result.usage?.total_tokens ?? "?"}`);
   return result;
 }
 
 // ─── Model Listing ───
 
-export type ModelInfo = {
-  id: string;
-  object: string;
-  created: number;
-  owned_by: string;
-};
-
-export type ModelsResponse = {
-  object: string;
-  data: ModelInfo[];
-};
-
 export async function listLLMModels(): Promise<ModelsResponse> {
-  assertApiKey();
+  log("[AI][LLM]", "Listing LLM models.");
 
-  const url = ENV.ollamaBaseUrl && ENV.ollamaBaseUrl.trim().length > 0
-    ? `${ENV.ollamaBaseUrl.replace(/\/$/, "")}/v1/models`
-    : "http://localhost:11434/v1/models";
+  // To make this truly provider-agnostic and functional on Render without a local Ollama instance,
+  // we need to query configured cloud providers. Since ProviderManager does not expose a listModels method,
+  // and we cannot modify ProviderManager, we will simulate a list based on configured providers.
+  // This will prevent the function from failing and provide a basic list of available models.
 
-  const response = await fetchWithBackoff(url, {
-    headers: { ...getAuthHeaders() },
-  });
+  const configuredProviders: ProviderStatus[] = providerManager.getProviderStatus();
+  const models: ModelInfo[] = [];
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `List LLM models failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+  // Add models from configured Groq provider
+  const groqStatus = configuredProviders.find(p => p.name === "groq");
+  if (groqStatus?.configured) {
+    models.push({
+      id: ENV.groqModel || "llama-3.1-8b-instant", // Use default if ENV is not set
+      object: "model",
+      created: Date.now(),
+      owned_by: "groq",
+    });
+    log("[AI][LLM]", `Added Groq model: ${ENV.groqModel || "llama-3.1-8b-instant"}`);
   }
 
-  return (await response.json()) as ModelsResponse;
+  // Add models from configured OpenRouter provider
+  const openrouterStatus = configuredProviders.find(p => p.name === "openrouter");
+  if (openrouterStatus?.configured) {
+    models.push({
+      id: ENV.openrouterModel || "meta-llama/llama-3.1-8b-instruct", // Use default if ENV is not set
+      object: "model",
+      created: Date.now(),
+      owned_by: "openrouter",
+    });
+    log("[AI][LLM]", `Added OpenRouter model: ${ENV.openrouterModel || "meta-llama/llama-3.1-8b-instruct"}`);
+  }
+
+  // If Ollama is configured (e.g., for local development), we can still include its default model.
+  // However, on Render, this will likely not be configured or reachable.
+  const ollamaStatus = configuredProviders.find(p => p.name === "ollama");
+  if (ollamaStatus?.configured && ENV.ollamaBaseUrl !== "http://localhost:11434") {
+    models.push({
+      id: ENV.ollamaModel || "llama3.2:1b",
+      object: "model",
+      created: Date.now(),
+      owned_by: "ollama",
+    });
+    log("[AI][LLM]", `Added Ollama model: ${ENV.ollamaModel || "llama3.2:1b"}`);
+  }
+
+  if (models.length === 0) {
+    log("[AI][LLM]", "No AI models found from configured providers.");
+    // Optionally, you could throw an error here if no models are absolutely required,
+    // but returning an empty list is safer to prevent crashes.
+  }
+
+  return {
+    object: "list",
+    data: models,
+  };
 }

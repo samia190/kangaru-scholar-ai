@@ -13,7 +13,7 @@ vi.mock("./_core/llm", () => ({
         index: 0,
         message: {
           role: "assistant" as const,
-          content: "This is a test response about Kangaru Girls High School.",
+          content: "This is a test response about Kangaru Girls Senior School.",
           tool_calls: undefined,
         },
         finish_reason: "stop",
@@ -78,7 +78,7 @@ describe("Chat Procedures", () => {
       const caller = appRouter.createCaller(ctx);
 
       const result = await caller.chat.guestChat({
-        message: "Tell me about Kangaru Girls High School",
+        message: "Tell me about Kangaru Girls Senior School",
         conversationHistory: [],
       });
 
@@ -161,13 +161,13 @@ describe("Chat Procedures", () => {
       expect(result.userId).toBe("6760a1b2c3d4e5f6a7b8c9d0");
     });
 
-    it("should support CBC curriculum", async () => {
+    it("should support CBE curriculum", async () => {
       const ctx = createProtectedContext();
       const caller = appRouter.createCaller(ctx);
 
       const result = await caller.chat.studentRevision({
         message: "Help me with Biology",
-        curriculum: "CBC",
+        curriculum: "CBE",
         subject: "Biology",
         conversationHistory: [],
       });

@@ -12,7 +12,7 @@ CREATE TABLE `lessonPlans` (
 --> statement-breakpoint
 CREATE TABLE `revisionMaterials` (
 	`id` int AUTO_INCREMENT NOT NULL,
-	`curriculum` enum('8-4-4','CBC') NOT NULL,
+	`curriculum` enum('8-4-4','CBE') NOT NULL,
 	`subject` varchar(255) NOT NULL,
 	`topic` varchar(255) NOT NULL,
 	`content` text NOT NULL,

@@ -25,7 +25,7 @@ export interface IChatHistory extends Document {
 
 export interface IRevisionMaterial extends Document {
   _id: mongoose.Types.ObjectId;
-  curriculum: "8-4-4" | "CBC";
+  curriculum: "8-4-4" | "CBE";
   subject: string;
   topic: string;
   content: string;
@@ -103,7 +103,7 @@ const revisionMaterialSchema = new Schema<IRevisionMaterial>(
   {
     curriculum: {
       type: String,
-      enum: ["8-4-4", "CBC"],
+      enum: ["8-4-4", "CBE"],
       required: true,
     },
     subject: { type: String, required: true },

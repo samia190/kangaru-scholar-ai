@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Kangaru Scholar AI** is a comprehensive web platform for Kangaru Girls High School featuring an elegant, polished interface with AI-powered tools for guests, students, and teachers. The platform uses **free, self-hosted open-source LLMs via Ollama** and provides role-based access control with persistent chat history.
+**Kangaru Scholar AI** is a comprehensive web platform for Kangaru Girls Senior School featuring an elegant, polished interface with AI-powered tools for guests, students, and teachers. The platform uses **free, self-hosted open-source LLMs via Ollama** and provides role-based access control with persistent chat history.
 
 ## Architecture & Technology Stack
 
@@ -21,7 +21,7 @@
 
 ### AI Integration (Free & Self-Hosted)
 - **LLM Provider:** Ollama (self-hosted, open-source, no API keys)
-- **Guest Chatbot:** `llama3.1:8b` — Fast general-purpose model
+- **Guest Chatbot:** `llama3.2:1b:8b` — Fast general-purpose model
 - **Student Revision Assistant:** `qwen2.5:14b` — Strong reasoning & structured output
 - **Teacher AI Tools:** `qwen2.5:14b` — Structured reasoning for lesson plans & timetables
 - **Fallback:** Manus Forge API (for testing without Ollama installed)
@@ -29,7 +29,7 @@
 ### Deployment Flexibility
 The platform is fully portable. To deploy anywhere:
 1. Install Ollama on your server: `curl -fsSL https://ollama.com/install.sh | sh`
-2. Pull required models: `ollama pull llama3.1:8b && ollama pull qwen2.5:14b`
+2. Pull required models: `ollama pull llama3.2:1b:8b && ollama pull qwen2.5:14b`
 3. Set `OLLAMA_BASE_URL=http://localhost:11434` in your environment
 4. Deploy — no API keys or external dependencies required
 
@@ -43,8 +43,8 @@ The platform is fully portable. To deploy anywhere:
 
 ### 2. Guest Portal (`/guest-chat`)
 - **No authentication required**
-- AI chatbot powered by `llama3.1:8b` (via Ollama)
-- Answers questions about Kangaru Girls High School
+- AI chatbot powered by `llama3.2:1b:8b` (via Ollama)
+- Answers questions about Kangaru Girls Senior School
 - Conversation history maintained during session
 - Markdown rendering for formatted responses
 - Suggested prompts for quick interactions
@@ -54,7 +54,7 @@ The platform is fully portable. To deploy anywhere:
 - **Requires Manus OAuth login**
 - Dashboard with two main features:
   1. **Revision Assistant** (`/student/revision`)
-     - Curriculum selection: 8-4-4 or CBC
+     - Curriculum selection: 8-4-4 or CBE
      - Subject-specific queries
      - AI-powered explanations using `qwen2.5:14b` (via Ollama)
      - Practice question generation
@@ -118,11 +118,11 @@ The platform is fully portable. To deploy anywhere:
 - `chat.guestChat` - Guest AI chatbot
   - Input: message, conversationHistory
   - Output: success, message
-  - Model: `llama3.1:8b`
+  - Model: `llama3.2:1b:8b`
 
 ### Protected Procedures (require authentication)
 - `chat.studentRevision` - Student revision assistant
-  - Input: message, curriculum (8-4-4|CBC), subject, conversationHistory
+  - Input: message, curriculum (8-4-4|CBE), subject, conversationHistory
   - Output: success, message, userId
   - Model: `qwen2.5:14b`
 
@@ -164,7 +164,7 @@ The platform is fully portable. To deploy anywhere:
 ### Phase 3: Guest Portal & Chatbot ✅
 - [x] Guest chat page implemented
 - [x] tRPC guest chatbot procedure created
-- [x] `llama3.1:8b` integration via Ollama
+- [x] `llama3.2:1b:8b` integration via Ollama
 - [x] Markdown rendering with AIChatBox component
 - [x] Suggested prompts for quick interactions
 
@@ -189,13 +189,13 @@ The platform is fully portable. To deploy anywhere:
 ### Phase 6: Final Polish & Delivery ✅
 - [x] All portals functional and accessible
 - [x] Authentication and authorization verified
-- [x] Consistent "Kangaru Girls High School" branding throughout
+- [x] Consistent "Kangaru Girls Senior School" branding throughout
 - [x] Elegant visual design applied
 - [x] Error handling and loading states implemented
 
 ### Phase 7: LLM Independence ✅
 - [x] Replaced Manus Forge API with Ollama self-hosted LLM
-- [x] Free, open-source models (llama3.1:8b, qwen2.5:14b)
+- [x] Free, open-source models (llama3.2:1b:8b, qwen2.5:14b)
 - [x] Portable — works anywhere without external API dependencies
 - [x] Fallback to Forge API for testing
 
@@ -210,7 +210,7 @@ The platform supports any Ollama-compatible model. Available options:
 
 | Model | Size | Best For | Command |
 |-------|------|----------|---------|
-| llama3.1:8b | 4.9GB | General purpose, fast | `ollama pull llama3.1:8b` |
+| llama3.2:1b:8b | 4.9GB | General purpose, fast | `ollama pull llama3.2:1b:8b` |
 | qwen2.5:14b | 9.1GB | Strong reasoning, structured output | `ollama pull qwen2.5:14b` |
 | mistral:7b | 4.1GB | Good all-rounder | `ollama pull mistral:7b` |
 | neural-chat:7b | 4.4GB | Conversational | `ollama pull neural-chat:7b` |
@@ -219,7 +219,7 @@ The platform supports any Ollama-compatible model. Available options:
 
 To swap models, update the constants in `server/routers.ts`:
 ```ts
-const GUEST_MODEL = "llama3.1:8b";      // Change to any model
+const GUEST_MODEL = "llama3.2:1b:8b";      // Change to any model
 const STUDENT_MODEL = "qwen2.5:14b";    // Change to any model
 const TEACHER_MODEL = "qwen2.5:14b";    // Change to any model
 ```
@@ -269,7 +269,7 @@ kangaru-scholar-ai/
 
 ## Contact & Support
 
-**School:** Kangaru Girls High School
+**School:** Kangaru Girls Senior School
 - Email: kangarugirlsls@yahoo.com
 - Phone: +254 113 688 538 / +254 796 214 804
 - Location: Manyatta Constituency, Embu County, Kenya

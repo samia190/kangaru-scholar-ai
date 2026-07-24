@@ -182,7 +182,7 @@
         },
         "curriculum": {
           "name": "curriculum",
-          "type": "enum('8-4-4','CBC')",
+          "type": "enum('8-4-4','CBE')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

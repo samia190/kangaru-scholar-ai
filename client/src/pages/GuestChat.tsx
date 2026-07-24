@@ -6,10 +6,10 @@ import { trpc } from "@/lib/trpc";
 import { AIChatBox, Message } from "@/components/AIChatBox";
 
 const GUEST_SUGGESTED_PROMPTS = [
-  "What is Kangaru Girls High School's motto?",
+  "What is Kangaru Girls Senior School's motto?",
   "Tell me about the school's academic performance",
   "How do I contact the school?",
-  "What facilities are available on campus?",
+  "What facilities are available on school?",
 ];
 
 export default function GuestChat() {
@@ -18,7 +18,7 @@ export default function GuestChat() {
     {
       role: "assistant",
       content:
-        "Hello! Welcome to **Kangaru Girls High School** AI Assistant. I'm here to answer any questions you have about our school. Feel free to ask about our history, academics, facilities, admissions, or anything else you'd like to know!",
+        "Hello! Welcome to **Kangaru Girls Senior School** AI Assistant. I'm here to answer any questions you have about our school. Feel free to ask about our history, academics, facilities, admissions, or anything else you'd like to know!",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +94,7 @@ export default function GuestChat() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-primary">
-              Kangaru Girls High School
+              Kangaru Girls Senior School
             </h1>
             <p className="text-sm text-muted-foreground">
               Guest AI Assistant
@@ -110,10 +110,10 @@ export default function GuestChat() {
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            placeholder="Ask a question about Kangaru Girls High School..."
+            placeholder="Ask a question about Kangaru Girls Senior School..."
             height="calc(100vh - 180px)"
             suggestedPrompts={GUEST_SUGGESTED_PROMPTS}
-            emptyStateMessage="Ask me anything about Kangaru Girls High School"
+            emptyStateMessage="Ask me anything about Kangaru Girls Senior School"
           />
         </div>
       </div>

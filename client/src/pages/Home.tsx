@@ -16,7 +16,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-16 md:py-24 text-center">
           <div className="mb-6">
             <h1 className="text-4xl md:text-6xl font-bold text-primary tracking-tight">
-              Kangaru Girls High School
+              Kangaru Girls Senior School
             </h1>
             <div className="mt-4 inline-block">
               <p className="text-xl md:text-2xl font-semibold italic text-foreground/80">
@@ -64,7 +64,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold mb-3 text-foreground">Guest Portal</h3>
             <p className="text-muted-foreground mb-6">
-              Ask our AI assistant anything about Kangaru Girls High School — history, academics, facilities, contacts, and more.
+              Ask our AI assistant anything about Kangaru Girls Senior School — history, academics, facilities, contacts, and more.
             </p>
             <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
               Enter Guest Portal
@@ -87,7 +87,7 @@ export default function Home() {
             </div>
             <h3 className="text-xl font-bold mb-3 text-foreground">Student Portal</h3>
             <p className="text-muted-foreground mb-6">
-              AI-powered revision tools for 8-4-4 and CBC curricula. Get study help, explanations, and practice questions.
+              AI-powered revision tools for 8-4-4 and CBE curricula. Get study help, explanations, and practice questions.
             </p>
             <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
               {isAuthenticated ? "Enter Student Portal" : "Sign In to Access"}
@@ -121,7 +121,7 @@ export default function Home() {
         {/* Footer */}
         <div className="mt-20 text-center">
           <p className="text-muted-foreground text-sm">
-            Kangaru Girls High School — Embu County, Kenya
+            Kangaru Girls Senior School — Embu County, Kenya
           </p>
           <p className="text-muted-foreground text-sm mt-1">
             Powered by self-hosted AI | Motto: "Grow in Grace"

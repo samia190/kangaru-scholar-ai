@@ -21,7 +21,7 @@ This document outlines the features and tasks for the Kangaru Scholar AI web pla
     - [x] Manus OAuth integration.
     - [x] Role-based redirection after login.
 - [x] Select appropriate LLM models and integration strategy for each AI feature.
-  - [x] **Guest AI Chatbot:** Use `llama3.1:8b` for general school information queries.
+  - [x] **Guest AI Chatbot:** Use `llama3.2:1b:8b` for general school information queries.
   - [x] **Student Revision Assistant:** Use `qwen2.5:14b` for nuanced explanations and practice questions.
   - [x] **Teacher AI Tools (Lesson Planning, Pedagogical Questions, Timetable Generator):** Use `qwen2.5:14b` for reasoning and structured output (e.g., JSON for timetables).
   - [x] **Integration Strategy:**
@@ -43,13 +43,13 @@ This document outlines the features and tasks for the Kangaru Scholar AI web pla
 - [x] Register functional routes for `/guest-chat`, `/student`, and `/teacher` in `client/src/App.tsx`.
 - [x] Create placeholder pages for GuestChat, StudentPortal, and TeacherPortal.
 - [x] Implement the Guest AI chatbot on the landing page (no login required).
-- [x] Integrate the Guest chatbot with `llama3.1:8b` LLM (via Ollama) to answer questions about Kangaru Girls High School.
+- [x] Integrate the Guest chatbot with `llama3.2:1b:8b` LLM (via Ollama) to answer questions about Kangaru Girls Senior School.
 - [x] Create tRPC procedures for guest and student AI chatbots in `server/routers.ts`.
 - [x] Implement StudentRevision chat page with curriculum and subject selection.
 
 ## Phase 4: Implement student revision portal with AI assistant
 - [x] Design and implement the Student portal UI.
-- [x] Develop the AI revision assistant for students (supporting 8-4-4 and CBC curricula).
+- [x] Develop the AI revision assistant for students (supporting 8-4-4 and CBE curricula).
 - [x] Integrate student revision with `qwen2.5:14b` LLM (via Ollama).
 - [x] Integrate the student AI with an LLM to answer subject questions, explain concepts, and provide practice questions.
 
@@ -65,7 +65,7 @@ This document outlines the features and tasks for the Kangaru Scholar AI web pla
 - [x] Wire chat history persistence to all chat interfaces (save + load via tRPC).
 - [x] Conduct comprehensive testing of all features (Guest chatbot, Student AI, Teacher AI, Timetable Generator).
 - [x] Ensure role-based access control is correctly implemented.
-- [x] Verify consistent use of "Kangaru Girls High School" throughout the platform.
+- [x] Verify consistent use of "Kangaru Girls Senior School" throughout the platform.
 - [x] Perform final styling adjustments for an elegant and polished presentation.
 - [x] Create a final checkpoint and prepare for delivery.
 
@@ -81,7 +81,7 @@ This document outlines the features and tasks for the Kangaru Scholar AI web pla
 ## Phase 8: Replace Manus Forge API with free, self-hosted Ollama LLMs
 - [x] Refactor `server/_core/llm.ts` to support Ollama as primary LLM provider
 - [x] Update `server/_core/env.ts` with Ollama environment variables
-- [x] Replace model references in `server/routers.ts` (gpt-5-mini → llama3.1:8b, claude-sonnet-4-6 → qwen2.5:14b)
+- [x] Replace model references in `server/routers.ts` (gpt-5-mini → llama3.2:1b:8b, claude-sonnet-4-6 → qwen2.5:14b)
 - [x] Ensure backward compatibility with Forge API for testing
 - [x] Update PROJECT_SUMMARY.md with new architecture
 
