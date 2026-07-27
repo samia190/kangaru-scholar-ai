@@ -38,7 +38,7 @@ async function startServer() {
 
   // ─── CORS Configuration ───
   const allowedOrigins = [
-  "https://kangaruai-assistant.onrender.com",
+  "https://kangarugirls.sc.ke",
   "http://localhost:5173",
   ...(process.env.ALLOWED_ORIGINS || "")
     .split(",")
