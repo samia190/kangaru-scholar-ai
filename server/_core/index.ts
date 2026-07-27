@@ -37,25 +37,32 @@ async function startServer() {
   await connectMongoDB();
 
   // ─── CORS Configuration ───
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  const allowedOrigins = [
+  "https://kangaruai-assistant.onrender.com",
+  "http://localhost:5173",
+  ...(process.env.ALLOWED_ORIGINS || "")
     .split(",")
-    .map((origin) => origin.trim());
+    .map((o) => o.trim())
+    .filter(Boolean),
+];
 
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    })
-  );
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      console.log("Request origin:", origin);
 
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("Blocked origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
