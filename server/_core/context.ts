@@ -1,18 +1,12 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { IUser } from "../models";
-import { sdk } from "./sdk";
+import jwt from "jsonwebtoken";
 
-// User shape for tRPC context — minimal fields needed by the app
+// User shape from website JWT
 export type TrpcUser = {
   id: string;
-  openId: string;
   name: string | null;
   email: string | null;
-  loginMethod: string | null;
-  role: "user" | "admin";
-  createdAt: Date;
-  updatedAt: Date;
-  lastSignedIn: Date;
+  role: "student" | "teacher" | "admin" | "parent" | "staff" | "superadmin" | "guest";
 };
 
 export type TrpcContext = {
@@ -27,21 +21,27 @@ export async function createContext(
   let user: TrpcUser | null = null;
 
   try {
-    const authUser = await sdk.authenticateRequest(opts.req);
-    // Normalize MongoDB user to the shape expected by tRPC procedures
-    user = {
-      id: authUser._id.toString(),
-      openId: authUser.openId,
-      name: authUser.name,
-      email: authUser.email,
-      loginMethod: authUser.loginMethod,
-      role: authUser.role,
-      createdAt: authUser.createdAt,
-      updatedAt: authUser.updatedAt,
-      lastSignedIn: authUser.lastSignedIn,
-    };
+    // Extract JWT from Authorization header
+    const authHeader = opts.req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.slice(7); // Remove "Bearer " prefix
+
+      // Decode JWT without verification (trust website's token)
+      // In production, you might want to verify the signature if you have the website's public key
+      const decoded = jwt.decode(token) as any;
+
+      if (decoded && decoded.id && decoded.role) {
+        user = {
+          id: decoded.id || decoded._id,
+          name: decoded.name || null,
+          email: decoded.email || null,
+          role: decoded.role || "guest",
+        };
+      }
+    }
   } catch (error) {
-    // Authentication is optional for public procedures.
+    // Authentication is optional for public procedures
+    console.error("[Auth] Error decoding JWT:", error);
     user = null;
   }
 

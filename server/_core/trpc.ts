@@ -1,4 +1,3 @@
-import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
@@ -10,11 +9,15 @@ const t = initTRPC.context<TrpcContext>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-const requireUser = t.middleware(async opts => {
+// Middleware to check if user is authenticated
+const requireAuth = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
   if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
   }
 
   return next({
@@ -25,14 +28,23 @@ const requireUser = t.middleware(async opts => {
   });
 });
 
-export const protectedProcedure = t.procedure.use(requireUser);
-
-export const adminProcedure = t.procedure.use(
-  t.middleware(async opts => {
+// Middleware to check for specific role
+const requireRole = (allowedRoles: string[]) =>
+  t.middleware(async (opts) => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.role !== 'admin') {
-      throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+      });
+    }
+
+    if (!allowedRoles.includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `This feature requires one of these roles: ${allowedRoles.join(", ")}`,
+      });
     }
 
     return next({
@@ -41,5 +53,16 @@ export const adminProcedure = t.procedure.use(
         user: ctx.user,
       },
     });
-  }),
+  });
+
+export const protectedProcedure = t.procedure.use(requireAuth);
+
+// Role-specific procedures
+export const studentProcedure = t.procedure.use(requireRole(["student"]));
+export const teacherProcedure = t.procedure.use(requireRole(["teacher"]));
+export const studentOrTeacherProcedure = t.procedure.use(
+  requireRole(["student", "teacher"])
+);
+export const adminProcedure = t.procedure.use(
+  requireRole(["admin"])
 );
